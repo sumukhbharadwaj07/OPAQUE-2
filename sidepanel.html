@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opaque</title>
+<link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="mark"><span>Opaque</span></div>
+  <button id="settingsBtn" class="icon" title="Settings">&#9881;</button>
+</header>
+
+<section id="settings" class="panel hidden">
+  <label class="lbl">Reasoning server</label>
+  <select id="server">
+    <option value="mock">Mock &mdash; offline, always works</option>
+    <option value="gemini">Gemini API</option>
+    <option value="ollama">Ollama &mdash; 127.0.0.1:11434</option>
+  </select>
+
+  <div id="geminiCfg" class="hidden">
+    <label class="lbl">API key</label>
+    <input type="password" id="apiKey" placeholder="your own key, stored in this browser">
+    <label class="lbl">Model</label>
+    <input type="text" id="model" list="modelList" value="gemini-3.6-flash">
+    <datalist id="modelList"></datalist>
+    <button id="testKey" class="btn ghost small">Test key and list models</button>
+  </div>
+
+  <div id="ollamaCfg" class="hidden">
+    <label class="lbl">Model</label>
+    <input type="text" id="ollamaModel" value="llama3.2">
+  </div>
+
+  <hr>
+  <label class="check">
+    <input type="checkbox" id="screenOcr" checked>
+    Also read the screen as an image
+  </label>
+  <p class="hint">
+    Needed for pages that are just a picture, such as a scanned document or an
+    ID card, where there is no text in the page to read. Uses Florence-2.
+  </p>
+  <label class="check">
+    <input type="checkbox" id="coverVisual" checked>
+    Also cover photos and QR codes in pictures
+  </label>
+  <p class="hint">
+    Florence-2 finds photographs of people and QR codes in any picture it reads
+    and covers them, without needing a rule.
+  </p>
+  <hr>
+  <label class="lbl" for="reviewMode">Before a message is sent</label>
+  <select id="reviewMode">
+    <option value="unsure">Show me when something is uncertain (recommended)</option>
+    <option value="always">Always show me what was found</option>
+    <option value="never">Never ask &mdash; hide everything found</option>
+  </select>
+  <p class="hint">
+    Certain values (Aadhaar, cards, passwords, addresses) are always hidden.
+    Uncertain ones &mdash; a name that might be a public figure, the city you
+    live in &mdash; are hidden too, but shown to you first so you can reveal
+    them.
+  </p>
+  <hr>
+  <div class="lbl">Text model (personal data)</div>
+  <p class="hint">
+    A 29&nbsp;MB model that finds names, places and organisations in anything
+    you type, attach or read from the screen. Loads when the panel opens and
+    runs on this machine.
+  </p>
+  <div id="nerStat" class="stat">starting&hellip;</div>
+  <hr>
+  <div class="lbl">Image reading (Florence-2)</div>
+  <p class="hint">
+    Needed only for images and scanned PDFs, where there is no text to read
+    directly. Downloads once (about 215&nbsp;MB), then stays on this machine.
+  </p>
+  <button id="warmModel" class="btn ghost small">Load Florence-2 now</button>
+  <div id="modelStat" class="stat">not loaded &mdash; will load automatically when you attach an image</div>
+  <hr>
+  <button id="forgetMemory" class="btn ghost small">Forget values remembered in this session</button>
+  <button id="clearModels" class="btn ghost small">Delete downloaded models</button>
+  <div id="storeStat" class="stat"></div>
+  <button id="reset" class="btn ghost small">Clear conversation</button>
+</section>
+
+<section class="strip">
+  <button id="scanBtn" class="btn">Read this screen</button>
+  <button id="clearBtn" class="btn ghost">Remove boxes</button>
+</section>
+
+<div class="serverbar">
+  Answering with <b id="serverNow">Mock</b>
+  <button id="changeServer" class="linkbtn">change</button>
+</div>
+
+<section id="metrics" class="metrics hidden">
+  <div><dt>Found</dt><dd id="mFound">0</dd></div>
+  <div><dt>Time</dt><dd id="mTime">&mdash;</dd></div>
+  <div><dt>Sent</dt><dd id="mBytes">&mdash;</dd></div>
+  <div><dt>Leaked</dt><dd id="mLeak" class="safe">0</dd></div>
+</section>
+
+<nav class="tabs">
+  <button class="tab active" data-view="chat">Chat</button>
+  <button class="tab" data-view="found">Found</button>
+  <button class="tab" data-view="wire">Sent</button>
+  <button class="tab" data-view="rules">Rules</button>
+</nav>
+
+<main>
+  <div id="view-chat" class="view">
+    <div id="log" class="log">
+      <div class="empty">
+        Everything is cleaned on this machine before anything is sent.<br><br>
+        Type a question, attach a PDF, spreadsheet, CSV or image, or press
+        <b>Read this screen</b>. Whatever the input, sensitive values are found
+        and replaced with placeholders first.
+      </div>
+    </div>
+  </div>
+
+  <div id="view-found" class="view hidden">
+    <div id="foundList" class="list"><div class="empty">Nothing read yet.</div></div>
+  </div>
+
+  <div id="view-wire" class="view hidden">
+    <pre id="wire" class="wire">Nothing sent yet.</pre>
+  </div>
+
+  <div id="view-rules" class="view hidden">
+    <div class="rulehead">
+      <b>Your own rules</b>
+      <p>Tell me what else to hide, or what is fine to send, in plain words.
+         These run on this machine, on top of the built-in detection, and
+         apply to messages, files and the screen.</p>
+      <div class="egs">
+        <button class="eg">hide names and addresses</button>
+        <button class="eg">never send anything about my health</button>
+        <button class="eg">hide the salary and phone columns</button>
+        <button class="eg">redact anything containing Acme</button>
+        <button class="eg">block rows 2 to 5</button>
+        <button class="eg">hide my company and where I live</button>
+        <button class="eg">blur the photograph</button>
+        <button class="eg">Mumbai is fine</button>
+      </div>
+    </div>
+    <div id="ruleLog" class="rulelog"></div>
+    <div id="ruleList" class="rulelist"></div>
+    <div class="rulecompose">
+      <input type="text" id="ruleInput" placeholder="e.g. never send my salary">
+      <button id="ruleAdd" class="btn">Add</button>
+    </div>
+  </div>
+</main>
+
+<div id="attachments" class="attach hidden"></div>
+
+<footer class="compose">
+  <button id="attachBtn" class="icon big" title="Attach a file">&#128206;</button>
+  <input type="file" id="file" multiple class="hidden"
+         accept=".pdf,.csv,.tsv,.txt,.md,.json,.xlsx,.xls,.xlsm,.png,.jpg,.jpeg,.webp,.gif,.bmp">
+  <textarea id="q" rows="1" placeholder="Ask anything&hellip;"></textarea>
+  <button id="send" class="btn">Ask</button>
+</footer>
+
+<iframe id="worker" src="worker.html" class="hidden-frame"></iframe>
+
+<script src="lib/detect.js"></script>
+<script src="lib/lexicon.js"></script>
+<script src="lib/guard.js"></script>
+<script src="lib/rules.js"></script>
+<script src="lib/tables.js"></script>
+<script src="sidepanel.js" type="module"></script>
+</body>
+</html>

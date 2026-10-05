@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Opaque",
+  "version": "0.3.0",
+  "description": "Sanitises everything on your own machine - typed text, files, and the screen - before any of it reaches a reasoning model.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "storage",
+    "tabs",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open Opaque"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "lib/detect.js",
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "sandbox": {
+    "pages": [
+      "worker.html"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: blob: https: http:; connect-src 'self' data: blob: https: http://127.0.0.1:11434 http://localhost:11434",
+    "sandbox": "sandbox allow-scripts; default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src blob:; connect-src https://huggingface.co https://*.hf.co data: blob:; img-src data: blob:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+  }
+}

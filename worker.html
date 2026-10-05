@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Opaque worker</title></head>
+<body>
+<!--
+  Sandboxed extraction worker. See worker.js.
+
+  No inline script and no remote script: the sandbox policy in manifest.json
+  allows only this extension's own files and blob: URLs the worker makes from
+  libraries the side panel hands it.
+-->
+<script src="lib/ner-align.js"></script>
+<script src="worker.js"></script>
+</body>
+</html>
